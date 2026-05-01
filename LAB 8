@@ -1,0 +1,78 @@
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+# ===================== LOAD DATA =====================
+income = pd.read_csv('income.csv')
+
+# Encode categorical variables
+for col in income.columns:
+    if income[col].dtype == object:
+        income[col] = income[col].astype('category').cat.codes
+
+# Target column
+X = income.drop('income_level', axis=1)
+y = income['income_level']
+
+# ===================== TRAIN-TEST SPLIT =====================
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+# ===================== DEFAULT ADABOOST =====================
+model = AdaBoostClassifier(
+    estimator=DecisionTreeClassifier(max_depth=1),  # updated argument
+    n_estimators=10,
+    random_state=42
+)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+print("========== DEFAULT ADABOOST ==========")
+print("Number of Trees:", 10)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+# ===================== HYPERPARAMETER TUNING =====================
+best_score = 0
+best_n = 0
+
+print("\n========== TUNING NUMBER OF TREES ==========")
+
+for n in [10, 20, 50, 100, 150, 200]:
+    model = AdaBoostClassifier(
+        estimator=DecisionTreeClassifier(max_depth=1),  # updated
+        n_estimators=n,
+        random_state=42
+    )
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    score = accuracy_score(y_test, y_pred)
+
+    print(f"Trees: {n} -> Accuracy: {score:.4f}")
+
+    if score > best_score:
+        best_score = score
+        best_n = n
+
+print("\n========== BEST MODEL ==========")
+print("Best Number of Trees:", best_n)
+print("Best Accuracy:", best_score)
+     
+========== DEFAULT ADABOOST ==========
+Number of Trees: 10
+Accuracy: 0.8182004299314157
+
+========== TUNING NUMBER OF TREES ==========
+Trees: 10 -> Accuracy: 0.8182
+Trees: 20 -> Accuracy: 0.8244
+Trees: 50 -> Accuracy: 0.8327
+Trees: 100 -> Accuracy: 0.8328
+Trees: 150 -> Accuracy: 0.8329
+Trees: 200 -> Accuracy: 0.8332
+
+========== BEST MODEL ==========
+Best Number of Trees: 200
+Best Accuracy: 0.8332480294810114
