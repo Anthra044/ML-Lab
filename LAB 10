@@ -1,0 +1,97 @@
+import numpy as np
+import pandas as pd
+
+
+df = pd.read_csv("heart.csv")
+
+for c in df.columns:
+    if df[c].dtype == 'object':
+        df[c] = df[c].astype('category').cat.codes
+
+X = df.drop("target", axis=1).values
+y = df["target"].values
+
+X = (X - X.mean(0)) / X.std(0)
+
+s = int(0.8 * len(X))
+Xtr, Xte = X[:s], X[s:]
+ytr, yte = y[:s], y[s:]
+
+
+sig = lambda z: 1/(1+np.exp(-z))
+
+def train(X, y):
+    w = np.zeros(X.shape[1])
+    for _ in range(500):
+        w -= 0.01 * np.dot(X.T, (sig(X @ w) - y)) / len(y)
+    return w
+
+def acc(y, p):
+    return (y == p).mean()
+
+
+w = train(Xtr, ytr)
+pred = (sig(Xte @ w) >= 0.5).astype(int)
+print("Without PCA:", acc(yte, pred))
+
+
+cov = np.cov(X.T)
+eigval, eigvec = np.linalg.eig(cov)
+
+idx = np.argsort(eigval)[::-1]
+eigvec = eigvec[:, idx]
+
+k = 5
+X_pca = X @ eigvec[:, :k]
+
+
+Xtr, Xte = X_pca[:s], X_pca[s:]
+
+
+w = train(Xtr, ytr)
+pred = (sig(Xte @ w) >= 0.5).astype(int)
+print("With PCA:", acc(yte, pred))
+     
+Without PCA: 0.7377049180327869
+With PCA: 0.7377049180327869
+
+#using libraries
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.decomposition import PCA
+from sklearn.metrics import accuracy_score
+
+df = pd.read_csv("heart.csv")
+
+for c in df.columns:
+    if df[c].dtype == 'object':
+        df[c] = LabelEncoder().fit_transform(df[c])
+
+X = df.drop("target", axis=1)
+y = df["target"]
+
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2)
+
+
+sc = StandardScaler()
+Xtr = sc.fit_transform(Xtr)
+Xte = sc.transform(Xte)
+
+
+m = LogisticRegression().fit(Xtr, ytr)
+print("Without PCA:", accuracy_score(yte, m.predict(Xte)))
+
+
+pca = PCA(n_components=5)
+Xtr_p = pca.fit_transform(Xtr)
+Xte_p = pca.transform(Xte)
+
+m = LogisticRegression().fit(Xtr_p, ytr)
+print("With PCA:", accuracy_score(yte, m.predict(Xte_p)))
+
+     
+Without PCA: 0.8360655737704918
+With PCA: 0.8360655737704918
