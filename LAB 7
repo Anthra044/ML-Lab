@@ -1,0 +1,70 @@
+# ===================== IMPORTS =====================
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
+
+# ===================== LOAD DATA =====================
+iris = pd.read_csv('iris.csv')
+
+X = iris.drop('species', axis=1)
+y = iris['species']
+
+
+# ===================== TRAIN-TEST SPLIT =====================
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+
+# ===================== DEFAULT RANDOM FOREST =====================
+model = RandomForestClassifier(n_estimators=10, max_depth=2, random_state=42)
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("========== DEFAULT RANDOM FOREST ==========")
+print("Number of Trees:", 10)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+
+
+# ===================== HYPERPARAMETER TUNING =====================
+best_score = 0
+best_n = 0
+
+print("\n========== TUNING NUMBER OF TREES ==========")
+
+for n in [10, 20, 50, 100, 150, 200]:
+    model = RandomForestClassifier(n_estimators=n, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    score = accuracy_score(y_test, y_pred)
+
+    print(f"Trees: {n} -> Accuracy: {score}")
+
+    if score > best_score:
+        best_score = score
+        best_n = n
+
+
+print("\n========== BEST MODEL ==========")
+print("Best Number of Trees:", best_n)
+print("Best Accuracy:", best_score)
+     
+========== DEFAULT RANDOM FOREST ==========
+Number of Trees: 10
+Accuracy: 1.0
+
+========== TUNING NUMBER OF TREES ==========
+Trees: 10 -> Accuracy: 1.0
+Trees: 20 -> Accuracy: 1.0
+Trees: 50 -> Accuracy: 1.0
+Trees: 100 -> Accuracy: 1.0
+Trees: 150 -> Accuracy: 1.0
+Trees: 200 -> Accuracy: 1.0
+
+========== BEST MODEL ==========
+Best Number of Trees: 10
+Best Accuracy: 1.0
